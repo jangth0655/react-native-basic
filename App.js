@@ -3,8 +3,11 @@ import * as Font from "expo-font";
 import { Ionicons } from "@expo/vector-icons";
 import { Asset } from "expo-asset";
 import { Text, Image } from "react-native";
-import { NavigationContainer } from "@react-navigation/native";
-import Tabs from "./navigation/Tabs";
+import { NavigationContainer, DefaultTheme } from "@react-navigation/native";
+import useColorScheme from "react-native/Libraries/Utilities/useColorScheme";
+import Root from "./navigation/Root";
+import { ThemeProvider } from "styled-components";
+import { lightThemes, DarkThemes } from "./styled";
 
 export default function App() {
   const [ready, setReady] = useState(false);
@@ -24,13 +27,17 @@ export default function App() {
   const assetsAll = async () =>
     await Promise.all([...preLoadFont(fonts), ...preLoadImage(assets)]);
 
+  const isDark = useColorScheme() === "dark";
+
   useEffect(() => {
     assetsAll();
   }, []);
 
   return (
-    <NavigationContainer>
-      <Tabs />
-    </NavigationContainer>
+    <ThemeProvider theme={isDark ? DarkThemes : lightThemes}>
+      <NavigationContainer>
+        <Root />
+      </NavigationContainer>
+    </ThemeProvider>
   );
 }
