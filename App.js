@@ -9,6 +9,7 @@ import Root from "./navigation/Root";
 import { ThemeProvider } from "styled-components";
 import { lightThemes, DarkThemes } from "./styled";
 import { QueryClient, QueryClientProvider } from "react-query";
+
 const queryClient = new QueryClient();
 
 export default function App() {

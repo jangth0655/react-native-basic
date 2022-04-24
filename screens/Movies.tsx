@@ -1,27 +1,14 @@
-///movie/now_playing?api_key=&language=en-US&page=1&region=kr
-//
-
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
-import react, { useEffect, useState } from "react";
-import {
-  ActivityIndicator,
-  Dimensions,
-  FlatList,
-  RefreshControl,
-  StyleSheet,
-  Text,
-  useColorScheme,
-  View,
-} from "react-native";
+import { Dimensions, FlatList } from "react-native";
 import Swiper from "react-native-swiper";
 import styled from "styled-components/native";
 import Slides from "../components/Slides";
 import VMedia from "../components/VMedia";
 import HMedia from "../components/HMedia";
-import { useQuery } from "react-query";
-import { movies } from "../api";
-
-const Container = styled.ScrollView``;
+import { useQuery, useQueryClient } from "react-query";
+import { MovieResponse, movieApi } from "../api";
+import HList from "../components/HList";
+import { useState } from "react";
 
 const Loader = styled.View`
   flex: 1;
@@ -31,7 +18,7 @@ const Loader = styled.View`
 
 const TrendingScroll = styled.FlatList`
   margin-top: 20px;
-`;
+` as unknown as typeof FlatList;
 
 const ListTitle = styled.Text`
   color: white;
@@ -51,67 +38,42 @@ const ComingSoonTitle = styled(ListTitle)`
 const VSeparator = styled.View`
   width: 20px;
 `;
+
 const HSeparator = styled.View`
   height: 20px;
 `;
 
 const { height: SCREEN_HEIGHT } = Dimensions.get("window");
 
-interface MoviePropsResult {
-  poster_path: string;
-  backdrop_path: string;
-  overview: string;
-  original_title: string;
-  vote_average: number;
-  id: number;
-  release_date: string;
-  [key: string]: any;
-}
-
-interface MovieProps {
-  page: number;
-  results: MoviePropsResult[];
-}
-
 const Movies: React.FC<NativeStackScreenProps<any, "Movies">> = () => {
   const [refreshing, setRefreshing] = useState(false);
-  const { isLoading: nowPlayingLoading, data: nowPlayingData } =
-    useQuery<MovieProps>("nowPlaying", movies.nowPlaying);
-  const { isLoading: upcomingLoading, data: upcomingData } = useQuery(
-    "upcoming",
-    movies.upcoming
-  );
-  const { isLoading: trendingLoading, data: trendingData } = useQuery(
-    "trending",
-    movies.trending
-  );
+  const queryClient = useQueryClient();
+  const {
+    isLoading: nowPlayingLoading,
+    data: nowPlayingData,
+    isRefetching: isRefetchingNowPlaying,
+  } = useQuery<MovieResponse>(["movies", "nowPlaying"], movieApi.nowPlaying);
+  const {
+    isLoading: upcomingLoading,
+    data: upcomingData,
+    isRefetching: isRefetchingUpcoming,
+  } = useQuery<MovieResponse>(["movies", "upcoming"], movieApi.upcoming);
+  const {
+    isLoading: trendingLoading,
+    data: trendingData,
+    isRefetching: isRefetchingTrending,
+  } = useQuery<MovieResponse>(["movies", "trending"], movieApi.trending);
 
-  const onRefresh = async () => {};
-
-  const renderVMedia = ({ item }) => (
-    <VMedia
-      posterPath={item.poster_path}
-      originalTitle={item.original_title}
-      voteAverage={item.vote_average}
-    />
-  );
-  const renderHMedia = ({ item }) => (
-    <HMedia
-      posterPath={item.poster_path}
-      originalTitle={item.original_title}
-      overview={item.overview}
-      releaseDate={item.release_date}
-    />
-  );
-
-  const movieKeyExtractor = (item) => item.id + "";
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await queryClient.refetchQueries(["movies"]);
+    setRefreshing(false);
+  };
 
   const loading = nowPlayingLoading || upcomingLoading || trendingLoading;
   return loading ? (
-    <Loader>
-      <ActivityIndicator />
-    </Loader>
-  ) : (
+    <Loader />
+  ) : upcomingData ? (
     <FlatList
       onRefresh={onRefresh}
       refreshing={refreshing}
@@ -129,41 +91,39 @@ const Movies: React.FC<NativeStackScreenProps<any, "Movies">> = () => {
               marginBottom: 30,
             }}
           >
-            {nowPlayingData?.results?.map((movie) => (
+            {nowPlayingData?.results.map((movie) => (
               <Slides
                 key={movie.id}
-                backdropPath={movie.backdrop_path}
+                backdropPath={movie.backdrop_path || ""}
                 overview={movie.overview}
                 id={movie.id}
-                posterPath={movie.poster_path}
+                posterPath={movie.poster_path || ""}
                 originalTitle={movie.original_title}
                 voteAverage={movie.vote_average}
               />
             ))}
           </Swiper>
-          <ListContainer>
-            <ListTitle>Trending Movies</ListTitle>
-            <TrendingScroll
-              keyExtractor={movieKeyExtractor}
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={{ paddingHorizontal: 30 }}
-              data={trendingData.results}
-              ItemSeparatorComponent={VSeparator}
-              renderItem={renderVMedia}
-            />
-          </ListContainer>
+          {trendingData ? (
+            <HList title="Trending Movies" data={trendingData?.results} />
+          ) : null}
           <ListContainer>
             <ComingSoonTitle>Coming soon</ComingSoonTitle>
           </ListContainer>
         </>
       }
-      data={upcomingData.results}
-      keyExtractor={movieKeyExtractor}
+      data={upcomingData?.results}
+      keyExtractor={(item) => item.id + ""}
       ItemSeparatorComponent={HSeparator}
-      renderItem={renderHMedia}
+      renderItem={({ item }) => (
+        <HMedia
+          posterPath={item.poster_path}
+          originalTitle={item.original_title}
+          overview={item.overview}
+          releaseDate={item.release_date}
+        />
+      )}
     />
-  );
+  ) : null;
 };
 
 export default Movies;
