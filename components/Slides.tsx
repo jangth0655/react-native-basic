@@ -8,6 +8,7 @@ import {
   View,
 } from "react-native";
 import styled from "styled-components/native";
+import { Movie } from "../api";
 import { makeImagePath } from "../utils";
 import Poster from "./Poster";
 
@@ -47,6 +48,7 @@ interface SlideProps {
   posterPath: string;
   originalTitle: string;
   voteAverage: number;
+  fullData: Movie;
   [key: string]: any;
 }
 
@@ -56,6 +58,7 @@ const Slides: React.FC<SlideProps> = ({
   posterPath,
   originalTitle,
   voteAverage,
+  fullData,
   id,
   ...rest
 }: SlideProps) => {
@@ -66,7 +69,7 @@ const Slides: React.FC<SlideProps> = ({
     navigation.navigate("Stack", {
       screen: "Detail",
       params: {
-        originalTitle,
+        ...fullData,
       },
     });
   };

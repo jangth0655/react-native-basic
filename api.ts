@@ -7,6 +7,15 @@ interface BaseResponse {
   total_pages: number;
 }
 
+interface VideosResult {
+  results: {
+    key: string;
+    type: string;
+    name: string;
+    id: string;
+  }[];
+}
+
 export interface Movie {
   poster_path: string;
   backdrop_path: string;
@@ -18,8 +27,25 @@ export interface Movie {
   [key: string]: any;
 }
 
+export interface TV {
+  poster_path: string;
+  backdrop_path: string;
+  overview: string;
+  original_name: string;
+  vote_average: number;
+  id: number;
+  first_air_date: string;
+  name: string;
+}
+
 export interface MovieResponse extends BaseResponse {
   results: Movie[];
+  videos?: VideosResult;
+}
+
+export interface TvResponse extends BaseResponse {
+  results: TV[];
+  videos?: VideosResult;
 }
 
 export const movieApi = {
@@ -41,13 +67,21 @@ export const movieApi = {
       `${BASE_URL}/search/movie?api_key=${API_KEY}&language=en-US&query=${query}`
     ).then((res) => res.json());
   },
+  Detail: ({ queryKey }: any) => {
+    const [_, id] = queryKey;
+    return fetch(
+      `${BASE_URL}/movie/${id}?api_key=${API_KEY}&language=en-US&append_to_response=videos,images`
+    ).then((res) => res.json());
+  },
 };
 
 export const tvApi = {
-  trending: () =>
-    fetch(
+  trending: ({ queryKey }: any) => {
+    console.log(queryKey);
+    return fetch(
       `${BASE_URL}/trending/tv/week?api_key=${API_KEY}&language=en-US`
-    ).then((res) => res.json()),
+    ).then((res) => res.json());
+  },
   airingToday: () =>
     fetch(`${BASE_URL}/tv/airing_today?api_key=${API_KEY}&language=en-US`).then(
       (res) => res.json()
@@ -60,6 +94,12 @@ export const tvApi = {
     const [_, query] = queryKey;
     return fetch(
       `${BASE_URL}/search/tv?api_key=${API_KEY}&language=en-US&query=${query}`
+    ).then((res) => res.json());
+  },
+  Detail: ({ queryKey }: any) => {
+    const [_, id] = queryKey;
+    return fetch(
+      `${BASE_URL}/tv/${id}?api_key=${API_KEY}&language=en-US&append_to_response=videos,images`
     ).then((res) => res.json());
   },
 };
