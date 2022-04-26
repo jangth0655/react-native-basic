@@ -40,11 +40,13 @@ export interface TV {
 
 export interface MovieResponse extends BaseResponse {
   results: Movie[];
+  imdb_id?: string;
   videos?: VideosResult;
 }
 
 export interface TvResponse extends BaseResponse {
   results: TV[];
+  imdb_id?: string;
   videos?: VideosResult;
 }
 
@@ -53,10 +55,10 @@ export const movieApi = {
     fetch(`${BASE_URL}/trending/movie/week?api_key=${API_KEY}`).then((res) =>
       res.json()
     ),
-  upcoming: () =>
-    fetch(`${BASE_URL}/movie/upcoming?api_key=${API_KEY}`).then((res) =>
-      res.json()
-    ),
+  upcoming: ({ pageParam }: any) =>
+    fetch(
+      `${BASE_URL}/movie/upcoming?api_key=${API_KEY}&page=${pageParam}`
+    ).then((res) => res.json()),
   nowPlaying: () =>
     fetch(`${BASE_URL}/movie/now_playing?api_key=${API_KEY}`).then((res) =>
       res.json()
